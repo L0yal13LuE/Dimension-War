@@ -29,6 +29,7 @@ export default class MyGame extends Phaser.Scene {
     this.outline = this.zone.renderOutline(this.dropZone);
     this.dealer = new Dealer(this);
 
+    // socket listener
     this.socket = io("http://localhost:3000");
 
     this.socket.on("connect", function () {
@@ -68,20 +69,7 @@ export default class MyGame extends Phaser.Scene {
       .setColor("#00ffff")
       .setInteractive();
 
-    this.playerName = this.add
-      .text(75, 900, [self.playerName])
-      .setFontSize(18)
-      .setFontFamily("Trebuchet MS")
-      .setColor("#00ffff")
-      .setInteractive();
-
-    this.dealCards = () => {
-      for (let i = 0; i < 5; i++) {
-        let playerCard = new Card(this);
-        playerCard.render(475 + i * 100, 650, "card-back");
-      }
-    };
-
+    // dealText
     this.dealText.on("pointerdown", function () {
       self.socket.emit("dealCards");
     });
@@ -113,8 +101,14 @@ export default class MyGame extends Phaser.Scene {
     });
 
     this.input.on("drop", function (pointer, gameObject, dropZone) {
+      if (dropZone.data.values.cards >= 1) {
+        gameObject.setTint();
+        gameObject.x = gameObject.input.dragStartX; // send back to hand
+        gameObject.y = gameObject.input.dragStartY; // send back to hand
+        return;
+      }
       dropZone.data.values.cards++;
-      gameObject.x = dropZone.x - 350 + dropZone.data.values.cards * 50;
+      gameObject.x = dropZone.x;
       gameObject.y = dropZone.y;
       gameObject.disableInteractive();
       self.socket.emit("cardPlayed", gameObject, self.isPlayerA);
